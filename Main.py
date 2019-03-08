@@ -1,76 +1,86 @@
- # limit is imposed on the strength of each neuron
-
- # mechanism that allows neurons to compete for the right to
- # respond to a given subset of inputs, such that only one neuron
- # is on at a time, winner-take all neuron
-
- # basically feature detectors
-
- # probably start by building a class that creates a multilayer network, that should stay persistent
 from Neural_Network import Neural_Network
 from DataManager import DataManager
 import copy
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import random
 import numpy as np
 
+#kohonen weights final and init are the same so i'm not copying them right I kohonen_guess
+#k-means wieghts are all the same value which makes me think they aren't being updated properly
+
 DataManager = DataManager()
-test = Neural_Network([3,2])
-# initialize starting weights to random points
-num_rows = DataManager.data.shape[0]
-init_idx = random.sample(range(0,num_rows), 2)
-print("random point", DataManager.data[init_idx[0]])
-test.layer_weights["weights1"] = np.array([list(DataManager.data[init_idx[0]]), list(DataManager.data[init_idx[1]])])  # np.array([DataManager.data[init_idx[0]], [DataManager.data[init_idx[1]]]])
-print("new weights: ", test.layer_weights)
-init_weights = copy.deepcopy(test.layer_weights)
-x_1 = []
-y_1 =[]
-x_2 = []
-y_2 = []
+test_k_means = Neural_Network([3,2])
+test_kohonen = Neural_Network([3,2])
 
-j = 0
-for i in range(50):
-    for input_ in DataManager.data:
-        test.kohonen_learn(input_)
-        # create data set for plotting movement of centroids
-        x = test.layer_weights['weights1'][0,][0]
-        y = test.layer_weights['weights1'][0,][1]
-        x_1.append(test.layer_weights['weights1'][0,][0])
-        y_1.append(test.layer_weights['weights1'][0,][1])
+#***** K_Means Results*****#
+test_k_means.initialize_weights(DataManager)
+k_means_init_weights = copy.deepcopy(test_k_means.layer_weights)
+test_k_means.k_means_learn(DataManager.data)
+k_means_final_weights = copy.deepcopy(test_k_means.layer_weights)
+clusters = test_k_means.k_means_clusters
+cluster0 = clusters["cluster0"]
+cluster0_data = (cluster0[:,0], cluster0[:,1], cluster0[:,2])
+cluster1 = clusters["cluster1"]
+cluster1_data = (cluster1[:,0], cluster1[:,1], cluster1[:,2])
+data = (cluster0_data, cluster1_data)
+print("\nK-Means Initial Weights: ", k_means_init_weights)
+print("\nK-Means Final Weights: ", k_means_final_weights)
 
-        x = test.layer_weights['weights1'][1,][0]
-        y = test.layer_weights['weights1'][1,][1]
-        x_2.append(test.layer_weights['weights1'][1,][0])
-        y_2.append(test.layer_weights['weights1'][1,][1])
+color = ("r", "b")
 
-weight1 = (x_1, y_1)
-weight2 = (x_2, y_2)
-# print("\nx's: ", weight1_x, "\n")
-print("initial weights: ", init_weights)
-print("final weights: ", test.layer_weights)
-data = (weight1, weight2)
-color = ("red", "blue")
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
 
+print("\nK_means epoch: ", test_k_means.k_means_epoch)
+
+for set_, color in zip(data, color):
+    x, y, z = set_
+    ax.scatter(x, y, z, c=color)
+
+ax.set_xlabel('X Label')
+ax.set_ylabel('Y Label')
+ax.set_zlabel('Z Label')
+ax.set_title("K-means Squared")
+
+
+#*****Kohonen Results*****#
+test_kohonen.initialize_weights(DataManager)
+kohonen_init_weights = copy.deepcopy(test_kohonen.layer_weights)
+print("\nStarting Kohonen Learn, this will take a second")
+for i in range(500): # number of epochs
+    for input_ in DataManager.data: #loop through each data point
+        test_kohonen.kohonen_learn(input_) #adjust weights on each point
+
+kohonen_final_weights = copy.deepcopy(test_kohonen.layer_weights)
+print("Kohonen initial weights: ", test_kohonen.layer_weights)
+print("Kohonen Final Weights: ", kohonen_final_weights)
 x_0 = []
 y_0 = []
-
+z_0 = []
 x_1 = []
 y_1 = []
-
+z_1 = []
 for input_ in DataManager.data:
-    guess = test.kohonen_guess(input_)
+    guess = test_kohonen.kohonen_guess(input_)
     if guess == 0:
         x_0.append(input_[0])
         y_0.append(input_[1])
+        z_0.append(input_[2])
     else:
         x_1.append(input_[0])
         y_1.append(input_[1])
+        z_1.append(input_[2])
 
-res1 = (x_0, y_0)
-res2 = (x_1, y_1)
-results = (res1, res2)
+fig1 = plt.figure()
+ax1 = fig1.add_subplot(111, projection='3d')
 
-for data, color in zip(results, color):
-    x, y = data
-    plt.scatter(x, y, c=color)
+ax1.scatter(x_0, y_0, z_0, c="r")
+ax1.scatter(x_1, y_1, z_1, c="b")
+
+ax1.set_xlabel('X Label')
+ax1.set_ylabel('Y Label')
+ax1.set_zlabel('Z Label')
+ax1.set_title("Kohonen Results")
+
 plt.show()

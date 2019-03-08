@@ -37,7 +37,6 @@ class Neural_Network():
         # initialize starting weights to random points from data set
         num_rows = DataManager.data.shape[0]
         init_idx = random.sample(range(0,num_rows), 2)
-        print("random point", DataManager.data[init_idx[0]])
         self.layer_weights["weights1"] = np.array([list(DataManager.data[init_idx[0]]), list(DataManager.data[init_idx[1]])])
 
     def kohonen_guess(self, input_arr):
@@ -83,12 +82,8 @@ class Neural_Network():
             prev_cluster["cluster" + str(i)] = []
         while True:
             self.k_means_epoch += 1
-            print("pre: ", clusters["cluster0"])
-            print("prev_cluster: ", prev_cluster)
             for i in range(k):
-                # this is working properly
                 clusters["cluster" + str(i)] = []
-            print("Post: ", clusters)
             # Categorize each point by cluster
             for point in all_inputs:
                 node_dists = []
