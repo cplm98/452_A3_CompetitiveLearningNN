@@ -11,6 +11,9 @@ def euclid_dist(weight_vec, input_vec):
     dist = np.sqrt(np.sum(np.square(np.subtract(input_vec, weight_vec))))
     return dist
 
+def error_(point, centroid):
+    err = np.square(np.subtract(point, centroid))
+    return err
 
 class Neural_Network():
     def __init__(self, arr):
@@ -39,7 +42,7 @@ class Neural_Network():
         init_idx = random.sample(range(0,num_rows), 2)
         self.layer_weights["weights1"] = np.array([list(DataManager.data[init_idx[0]]), list(DataManager.data[init_idx[1]])])
 
-    def kohonen_guess(self, input_arr):
+    def guess(self, input_arr):
         node_dists = []
         for key in self.layer_weights.keys():
             weights_mat = self.layer_weights[key]
@@ -64,13 +67,14 @@ class Neural_Network():
                 dist = euclid_dist(weight_row, input_arr)
                 node_dists.append(dist)  # add distance to no_dists
         winner = np.argmin(node_dists)  # index of the smallest distance
+        err = error_(input_arr, weights_mat[winner, ])
         # adjust winning weight
         delta_w = self.c * (np.subtract(input_arr, weights_mat[winner]))
         # this links back and changes the matrix in self.layer_weights
         weights_mat[winner, ] = weights_mat[winner, ] + delta_w
+        return err
 
     def k_means_learn(self, all_inputs):
-        # kinda broke the expandability of my code by using this index
         # take the only weight layer
         weights_mat = self.layer_weights["weights1"]
         k = weights_mat.shape[0]  # number of nodes aka number of clusters
@@ -81,38 +85,30 @@ class Neural_Network():
             clusters["cluster" + str(i)] = []
             prev_cluster["cluster" + str(i)] = []
         while True:
-            self.k_means_epoch += 1
+            self.k_means_epoch += 1 # count number of epochs
             for i in range(k):
                 clusters["cluster" + str(i)] = []
             # Categorize each point by cluster
             for point in all_inputs:
-                node_dists = []
+                node_dists = [] # store distances from point to each centroid
                 point = np.array(point)
                 for i in range(k):
                     # calculate distance from centroids
                     node_dists.append(euclid_dist(weights_mat[i, ], point))
-                winner = np.argmin(node_dists)
+                winner = np.argmin(node_dists) # winning index is centroid closest to point
                 # if empty, initialize dimensions of ndarray
                 if clusters["cluster" + str(winner)] == []:
                     clusters["cluster" + str(winner)].append(point)
                 else:
-                    # creates ndarray of cluster points
+                    # use vstack to maintain shape of ndarray and coordinates of each point
                     clusters["cluster" + str(winner)] = np.vstack(
                         (clusters["cluster" + str(winner)], point))
             for i in range(k):
-                weights_mat[i, ] = np.mean(clusters["cluster" + str(i)])
-
-            # ( == prev_cluster["cluster0"]) and (clusters["cluster1"] == prev_cluster["cluster1"]):
+                weights_mat[i, ] = np.mean(clusters["cluster" + str(i)], axis=0) # adjust centroids to mean position of all points
+                                                                                 # in its cluster
+            # exit if cluster for each centroid doesn't change, meaning if centroid position didn't change
             if np.array_equal(clusters["cluster0"], prev_cluster["cluster0"]) and np.array_equal(clusters["cluster1"], prev_cluster["cluster1"]):
                 self.k_means_clusters = copy.deepcopy(clusters)
                 break
             else:
                 prev_cluster = copy.deepcopy(clusters)
-
-
-# print(euclid_dist([5,3,2,1], [3,4,5,6]))
-# test = Neural_Network([3,2])
-# data = [3,4,5]
-# print(test.layer_weights)
-# test.kohonen_learn(data)
-# print("\n\n post: ", test.layer_weights)
